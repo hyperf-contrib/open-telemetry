@@ -15,6 +15,9 @@ use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\SemConv\TraceAttributes;
 
+/**
+ * @property \Symfony\Component\Console\Input\InputInterface $input
+ */
 class CommandListener extends InstrumentationListener implements ListenerInterface
 {
 
@@ -41,12 +44,14 @@ class CommandListener extends InstrumentationListener implements ListenerInterfa
 
     protected function onBeforeHandle(BeforeHandle $event): void
     {
+        $args = (fn () => $this->input->getArguments())->call($event->getCommand());
+
         $parent = Context::getCurrent();
         $span   = $this->instrumentation->tracer()->spanBuilder($event->getCommand()->getName())
             ->setSpanKind(SpanKind::KIND_INTERNAL)
             ->setAttributes([
                 TraceAttributes::PROCESS_COMMAND         => $event->getCommand()->getName(),
-                TraceAttributes::PROCESS_COMMAND_ARGS    => $event->getCommand()->getDefinition()->getArguments(),
+                TraceAttributes::PROCESS_COMMAND_ARGS    => $args,
                 TraceAttributes::PROCESS_CREATION_TIME   => Carbon::now()->toIso8601String(),
                 TraceAttributes::PROCESS_EXECUTABLE_NAME => $event->getCommand()->getName(),
             ])
